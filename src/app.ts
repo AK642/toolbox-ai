@@ -1,7 +1,7 @@
 import express, { Express, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { Routes } from './routes/index.routes';
+import routes from './routes/index.routes';
 import { swaggerUi } from './swagger/swagger';
 import path from 'path';
 import YAML from 'yamljs';
@@ -9,7 +9,6 @@ import { errorMiddleware } from './middleware/error.middleware';
 
 export class App {
     public express: Express = express();
-    public routes = new Routes();
     
     constructor() {
         // Middlewares
@@ -25,7 +24,7 @@ export class App {
         });
 
         // Routes
-        this.express.use('/api', this.routes.router);
+        this.express.use('/', routes);
 
         // Swagger route
         const swaggerSpec = YAML.load(path.join(__dirname, './swagger/swagger.yaml'));

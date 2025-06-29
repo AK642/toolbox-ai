@@ -1,10 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { HttpStatus } from '../utils/http-status';
 import { AIToolsService } from '../services/ai-tools.service';
-import { callAITool } from '../gateway/ai-gateway';
+import { AIGatewayService } from '../gateway/services/ai-gateway.service';
 
 export class AIToolsController extends HttpStatus {
     public aiToolsService: AIToolsService = new AIToolsService();
+    private gatewayService: AIGatewayService = AIGatewayService.getInstance();
 
     /** GET: Get all AI tools */
     public getAllAITools = async (req: Request, res: Response, next: NextFunction) => {
@@ -101,14 +102,26 @@ export class AIToolsController extends HttpStatus {
             type UserRequest = Request & { user?: { id?: string } };
             const userReq = req as UserRequest;
             const userId = userReq.user?.id || 'test-user';
+            
             // Stub: check user credits (replace with real logic)
             const hasCredits = true; // TODO: implement real credit check
             if (!hasCredits) return this.badRequest(res, 'Insufficient credits.');
-            // Call the gateway
-            const aiResponse = await callAITool(toolId, message, userId);
+            
+            // Call the new gateway service
+            const gatewayResponse = await this.gatewayService.callAITool(toolId, message, userId);
+            
+            if (!gatewayResponse.success) {
+                return this.badRequest(res, gatewayResponse.error || 'AI Tool service error');
+            }
+            
             // Stub: deduct credit (replace with real logic)
             // ...
-            this.success(res, 'AI Tool response received.', { response: aiResponse });
+            
+            this.success(res, 'AI Tool response received.', { 
+                response: gatewayResponse.data,
+                duration: gatewayResponse.duration,
+                timestamp: gatewayResponse.timestamp
+            });
         } catch (err) {
             this.badRequest(res, 'Failed to call AI Tool service.');
             next(err);

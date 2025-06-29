@@ -2,19 +2,33 @@ import { Router } from 'express';
 import { UserRoutes } from './user.routes';
 import { RoleRoutes } from './role.routes';
 import { AIToolsRoutes } from './ai-tools.routes';
+import gatewayRoutes from './gateway.routes';
+import queueRoutes from './queue.routes';
+import socketRoutes from './socket.routes';
 
-export class Routes {
-    public router = Router();
+const router = Router();
 
-    // Create routes instances
-    private userRoutes: UserRoutes = new UserRoutes();
-    private roleRoutes: RoleRoutes = new RoleRoutes();
-    private aiToolsRoutes: AIToolsRoutes = new AIToolsRoutes();
+// Health check route
+router.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 
-    constructor() {
-        // Initialize routes
-        this.router.use('/user', this.userRoutes.router);
-        this.router.use('/role', this.roleRoutes.router);
-        this.router.use('/ai-tools', this.aiToolsRoutes.router);
-    }
-}
+// Create route instances
+const userRoutes = new UserRoutes();
+const roleRoutes = new RoleRoutes();
+const aiToolsRoutes = new AIToolsRoutes();
+
+// API routes
+router.use('/api/users', userRoutes.router);
+router.use('/api/roles', roleRoutes.router);
+router.use('/api/ai-tools', aiToolsRoutes.router);
+router.use('/api/gateway', gatewayRoutes);
+router.use('/api/queue', queueRoutes);
+router.use('/api/socket', socketRoutes);
+
+export default router;
