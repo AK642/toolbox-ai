@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+service AITool {
+  rpc ProcessMessage (UserMessage) returns (ToolResponse);
+}
+
+message UserMessage {
+  string message = 1;
+  string user_id = 2;
+}
+
+message ToolResponse {
+  string response = 1;
+} 

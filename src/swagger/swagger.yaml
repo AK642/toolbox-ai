@@ -1,0 +1,24 @@
+openapi: 3.0.0
+info:
+  title: Project Swagger
+  contact: {}
+  version: "1.0"
+servers:
+  - url: http://localhost:3000/api
+    variables: {}
+paths:
+  /user/all:
+    get:
+      tags:
+        - User
+      summary: Get all User
+      operationId: GetAllUser
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          headers: {}
+      deprecated: false
+tags:
+  - name: User
+    description: ""
