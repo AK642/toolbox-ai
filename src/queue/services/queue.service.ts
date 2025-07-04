@@ -9,6 +9,7 @@ import {
   QueueStats,
   QueueHealth
 } from '../types/queue.types';
+import amqp from 'amqplib';
 
 export class QueueService {
   private static instance: QueueService;
@@ -30,6 +31,8 @@ export class QueueService {
     connectionErrors: 0,
     messageErrors: 0
   };
+  private connection: amqp.ChannelModel | null = null;
+  private channel: amqp.Channel | null = null;
 
   private constructor() {
     this.configManager = QueueConfigManager.getInstance();
@@ -43,19 +46,22 @@ export class QueueService {
   }
 
   public async connect(): Promise<void> {
+    if (this.isConnected && this.connection && this.channel) return;
     try {
-      // TODO: Implement actual RabbitMQ connection
-      // For now, just simulate connection
+      const config = this.configManager.getConfig();
+      const connStr = `amqp://${config.username}:${config.password}@${config.host}:${config.port}${config.vhost ? `/${config.vhost}` : ''}`;
+      this.connection = await amqp.connect(connStr);
+      if (!this.connection) throw new Error('Failed to establish RabbitMQ connection');
+      this.channel = await this.connection.createChannel();
       this.isConnected = true;
       this.health.status = 'connected';
       this.health.lastHeartbeat = new Date();
       this.reconnectAttempts = 0;
-      
-      console.log('Queue service initialized (RabbitMQ connection pending)');
+      console.log('Queue service connected to RabbitMQ');
     } catch (error) {
       this.health.connectionErrors++;
       this.health.status = 'error';
-      console.error('Failed to initialize queue service:', error);
+      console.error('Failed to connect to RabbitMQ:', error);
       throw error;
     }
   }
@@ -134,31 +140,33 @@ export class QueueService {
     return await this.publishMessage(message, 'status_updates');
   }
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   public async consumeMessages(
-    queue: string, 
+    queue: string,
     handler: (message: QueueMessage) => Promise<void>
   ): Promise<void> {
-    if (!this.isConnected) {
+    if (!this.isConnected || !this.channel) {
       await this.connect();
     }
+    if (!this.channel) throw new Error('Channel not initialized');
 
-    // TODO: Implement actual message consumption from RabbitMQ
-    console.log(`Would consume messages from ${queue} with handler`);
-    
-    // Create a mock message for demonstration
-    const mockMessage: QueueMessage = {
-      id: 'mock-' + Date.now(),
-      type: 'notification',
-      payload: { userId: 'mock', type: 'info', title: 'Mock', message: 'Mock message' },
-      timestamp: new Date(),
-      userId: 'mock'
-    };
-    
-    // Call handler with mock message
-    await handler(mockMessage);
+    await this.channel.assertQueue(queue, { durable: true });
+
+    this.channel.consume(queue, async (msg: amqp.ConsumeMessage | null) => {
+      if (msg) {
+        try {
+          const content = msg.content.toString();
+          const message: QueueMessage = JSON.parse(content);
+          await handler(message);
+          this.channel!.ack(msg);
+        } catch (err) {
+          console.error('Error processing message:', err);
+          this.channel!.nack(msg, false, false); // Optionally send to dead-letter
+        }
+      }
+    }, { noAck: false });
+
+    console.log(`Consuming messages from queue: ${queue}`);
   }
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   public getStats(): QueueStats {
     return { ...this.stats };

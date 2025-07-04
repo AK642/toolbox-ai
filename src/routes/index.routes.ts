@@ -24,11 +24,11 @@ const roleRoutes = new RoleRoutes();
 const aiToolsRoutes = new AIToolsRoutes();
 
 // API routes
-router.use('/api/users', userRoutes.router);
-router.use('/api/roles', roleRoutes.router);
-router.use('/api/ai-tools', aiToolsRoutes.router);
-router.use('/api/gateway', gatewayRoutes);
-router.use('/api/queue', queueRoutes);
-router.use('/api/socket', socketRoutes);
+router.use('/users', userRoutes.router);
+router.use('/roles', roleRoutes.router);
+router.use('/ai-tools', aiToolsRoutes.router);
+router.use('/gateway', gatewayRoutes);
+router.use('/queue', queueRoutes);
+router.use('/socket', socketRoutes);
 
 export default router;

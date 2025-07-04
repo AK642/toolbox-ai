@@ -24,7 +24,7 @@ export class App {
         });
 
         // Routes
-        this.express.use('/', routes);
+        this.express.use('/api', routes);
 
         // Swagger route
         const swaggerSpec = YAML.load(path.join(__dirname, './swagger/swagger.yaml'));

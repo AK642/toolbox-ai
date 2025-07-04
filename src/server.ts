@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { App } from './app';
 import { initializeDatabase } from './config/database';
 import { Mongoose } from 'mongoose';
+import './queue/services/worker';
 
 const app = new App();
 
